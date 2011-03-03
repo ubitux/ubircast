@@ -28,7 +28,7 @@ static struct {
 };
 
 #define OUTBOUNDED(x, y) (x >= map.w || x < 0 || y >= map.h || y < 0)
-#define MAP(x, y) map.data[(int)(y) * map.w + (int)(x)]
+#define MAP(x, y)        map.data[(int)(y) * map.w + (int)(x)]
 
 static void map_dig(int x, int y)
 {
