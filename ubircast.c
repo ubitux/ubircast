@@ -30,27 +30,6 @@ static struct {
 #define OUTBOUNDED(x, y) (x >= map.w || x < 0 || y >= map.h || y < 0)
 #define MAP(x, y) map.data[(int)(y) * map.w + (int)(x)]
 
-#define MV_PL(X, Y) do { \
-    float x = pl.x + (X); \
-    float y = pl.y + (Y); \
-    if (MAP(x, y) == ' ') { \
-        pl.x = x; \
-        pl.y = y; \
-    } \
-} while (0);
-
-#define SUB_ANGLE(a, v) do { \
-    a -= v; \
-    if (a < 0) \
-        a += 2 * M_PI; \
-} while (0)
-
-#define ADD_ANGLE(a, v) do { \
-    a += v; \
-    if (a > 2 * M_PI) \
-        a -= 2 * M_PI; \
-} while (0)
-
 static void map_dig(int x, int y)
 {
     u8 tested = 0;
@@ -87,6 +66,28 @@ static void init_maze(void)
     map_dig((int)pl.x, (int)pl.y);
 }
 
+static float sub_angle(float a, float v)
+{
+    a -= v;
+    return a < 0 ? a + 2 * M_PI : a;
+}
+
+static float add_angle(float a, float v)
+{
+    a += v;
+    return a > 2 * M_PI ? a - 2 * M_PI : a;
+}
+
+static void mv_pl(float x, float y)
+{
+    x = pl.x + x;
+    y = pl.y + y;
+    if (MAP(x, y) == ' ') {
+        pl.x = x;
+        pl.y = y;
+    }
+}
+
 static int handle_events(void)
 {
     SDL_Event event;
@@ -98,12 +99,12 @@ static int handle_events(void)
         return -1;
     if (event.type == SDL_KEYDOWN) {
         switch (event.key.keysym.sym) {
-        case SDLK_LEFT:     ADD_ANGLE(pl.angle, .1f);                           break;
-        case SDLK_RIGHT:    SUB_ANGLE(pl.angle, .1f);                           break;
+        case SDLK_LEFT:     pl.angle = add_angle(pl.angle, .1f);                break;
+        case SDLK_RIGHT:    pl.angle = sub_angle(pl.angle, .1f);                break;
         case SDLK_w:
-        case SDLK_UP:       MV_PL( .2f * cos(pl.angle), .2f * sin(pl.angle));   break;
+        case SDLK_UP:       mv_pl( .2f * cos(pl.angle), .2f * sin(pl.angle));   break;
         case SDLK_s:
-        case SDLK_DOWN:     MV_PL(-.2f * cos(pl.angle),-.2f * sin(pl.angle));   break;
+        case SDLK_DOWN:     mv_pl(-.2f * cos(pl.angle),-.2f * sin(pl.angle));   break;
         case SDLK_a:                                                            break;
         case SDLK_d:                                                            break;
         default:                                                                break;
@@ -192,13 +193,13 @@ static void update_frame(u8 *data)
     float angle = pl.angle;
 
     memcpy(data, sky, sizeof(sky));
-    ADD_ANGLE(angle, FOV / 2);
+    angle = add_angle(angle, FOV / 2);
     for (x = 0; x < WIN_W; x++) {
         int wall_h = (int)(WIN_H / get_dist_wall(angle)); // + .5f?
         int y = draw_wall(data, wall_h);
 
         draw_floor(data, y);
-        SUB_ANGLE(angle, FOV / WIN_W);
+        angle = sub_angle(angle, FOV / WIN_W);
         data += BPP / 8;
     }
 }
