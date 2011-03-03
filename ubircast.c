@@ -152,7 +152,7 @@ static void draw_floor(u8 *data, int y)
 
 struct coords { float x, y; };
 
-#define MAP_FREE(i, xb, yb) (i.x >= map.w || i.x < 0 || i.y >= map.h || i.y < 0 || MAP(xb, yb) != ' ')
+#define HIT_WALL(i, xb, yb) (OUTBOUNDED(i.x, i.y) || MAP(xb, yb) != ' ')
 #define DIST(p1, p2)        ((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y))
 
 static float get_dist_wall(float angle)
@@ -166,7 +166,7 @@ static float get_dist_wall(float angle)
     // inter with X constant
     for (;;) {
         ix.y = (ix.x - pl.x) * slope + pl.y;
-        if (MAP_FREE(ix, ix.x - (xinc < 0), ix.y))
+        if (HIT_WALL(ix, ix.x - (xinc < 0), ix.y))
             break;
         ix.x += xinc;
     }
@@ -174,7 +174,7 @@ static float get_dist_wall(float angle)
     // inter with Y constant
     for (;;) {
         iy.x = (iy.y - pl.y) / slope + pl.x;
-        if (MAP_FREE(iy, iy.x, iy.y - (yinc < 0)))
+        if (HIT_WALL(iy, iy.x, iy.y - (yinc < 0)))
             break;
         iy.y += yinc;
     }
