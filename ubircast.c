@@ -37,7 +37,7 @@ static struct {
              "###############",
 };
 
-#define MAP(x, y) map.data[(map.h - (int)(y) - 1) * (map.w) + (int)(x)]
+#define MAP(x, y) map.data[(int)(y) * map.w + (int)(x)]
 
 #define MV_PL(X, Y) do { \
     float x = pl.x + (X); \
