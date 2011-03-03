@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <SDL.h>
+#include <time.h>
 
 #define WIN_W 640
 #define WIN_H 480
@@ -22,21 +23,11 @@ static struct {
     int w, h;
     u8 *data;
 } map = {
-    .w     = 15,
-    .h     = 10,
-    .data  = (u8 *)
-             "###############"
-             "#             #"
-             "#   #    ######"
-             "#####      #  #"
-             "#      #      #"
-             "#    ###   #  #"
-             "#          #  #"
-             "#####         #"
-             "#        #    #"
-             "###############",
+    .w = 100,
+    .h = 100,
 };
 
+#define OUTBOUNDED(x, y) (x >= map.w || x < 0 || y >= map.h || y < 0)
 #define MAP(x, y) map.data[(int)(y) * map.w + (int)(x)]
 
 #define MV_PL(X, Y) do { \
@@ -59,6 +50,42 @@ static struct {
     if (a > 2 * M_PI) \
         a -= 2 * M_PI; \
 } while (0)
+
+static void map_dig(int x, int y)
+{
+    u8 tested = 0;
+
+    MAP(x, y) = ' ';
+    while (tested != (1<<0 | 1<<1 | 1<<2 | 1<<3)) {
+        int xinc = 0, yinc = 0, direction;
+
+        do {
+            direction = rand() % 4;
+            switch (direction) {
+            case 0: yinc =  1; break;
+            case 1: xinc =  1; break;
+            case 2: yinc = -1; break;
+            case 3: xinc = -1; break;
+            }
+        } while (tested & (1<<direction));
+
+        tested |= 1<<direction;
+
+        if (OUTBOUNDED(x + xinc  , y + yinc  ) || MAP(x + xinc  , y + yinc  ) == ' ' ||
+            OUTBOUNDED(x + xinc*2, y + yinc*2) || MAP(x + xinc*2, y + yinc*2) == ' ')
+            continue;
+        map_dig(x + xinc, y + yinc);
+    }
+}
+
+static void init_maze(void)
+{
+    size_t sz = map.h * map.w * sizeof(*map.data);
+    map.data = malloc(sz);
+    memset(map.data, '#', sz);
+    srand(time(NULL));
+    map_dig((int)pl.x, (int)pl.y);
+}
 
 static int handle_events(void)
 {
@@ -190,6 +217,7 @@ int main(void)
 
     SDL_EnableKeyRepeat(1, SDL_DEFAULT_REPEAT_INTERVAL);
 
+    init_maze();
     init_sky();
 
     do {
