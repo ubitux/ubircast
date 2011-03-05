@@ -160,11 +160,21 @@ static int draw_wall(u8 *data, struct inter i)
     return y + j;
 }
 
-static void draw_floor(u8 *data, int y)
+static void draw_floor(u8 *data, int y, int wall_h)
 {
     data += y * WIN_W * (BPP / 8);
+    int i = 0;
     while (y++ < WIN_H) {
-        memcpy(data, "\x50\x80\x10\xff", 4);
+        u8 tint;
+        if (wall_h > 0) {
+            tint = 0x10;
+        } else {
+            int v = i++ * .1f;
+            tint = v > 0x10 ? 0 : 0x10 - v;
+        }
+        wall_h--;
+        u8 c[4] = {tint, tint, tint, 0xff};
+        memcpy(data, c, 4);
         data += WIN_W * (BPP / 8);
     }
 }
@@ -219,9 +229,10 @@ static void update_frame(u8 *data)
     memcpy(data, sky, sizeof(sky));
     float angle = add_angle(pl.angle, FOV / 2.f);
     for (int x = 0; x < WIN_W; x++) {
-        int y = draw_wall(data, get_wall_inter(angle));
+        struct inter i = get_wall_inter(angle);
+        int y = draw_wall(data, i);
 
-        draw_floor(data, y);
+        draw_floor(data, y, i.wall_h);
         angle = sub_angle(angle, FOV / WIN_W);
         data += BPP / 8;
     }
