@@ -191,13 +191,10 @@ static float get_dist_wall(float angle)
 
 static void update_frame(u8 *data)
 {
-    int x;
-    float angle = pl.angle;
-
     memcpy(data, sky, sizeof(sky));
-    angle = add_angle(angle, FOV / 2);
-    for (x = 0; x < WIN_W; x++) {
-        int wall_h = (int)(WIN_H / get_dist_wall(angle)); // + .5f?
+    float angle = add_angle(pl.angle, FOV / 2.f);
+    for (int x = 0; x < WIN_W; x++) {
+        int wall_h = (int)(WIN_H / get_dist_wall(angle) + .5f);
         int y = draw_wall(data, wall_h);
 
         draw_floor(data, y);
