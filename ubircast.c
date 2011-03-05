@@ -86,10 +86,10 @@ static void mv_pl(float x, float y)
 {
     x = pl.x + x;
     y = pl.y + y;
-    if (!MAP(x, y)) {
+    if (!MAP(x, pl.y))
         pl.x = x;
+    if (!MAP(pl.x, y))
         pl.y = y;
-    }
 }
 
 static int handle_events(void)
