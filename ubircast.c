@@ -36,7 +36,7 @@ static void map_dig(int x, int y)
 {
     u8 tested = 0;
 
-    MAP(x, y) = ' ';
+    MAP(x, y) = 0;
     while (tested != (1<<0 | 1<<1 | 1<<2 | 1<<3)) {
         int xinc = 0, yinc = 0, direction;
 
@@ -52,8 +52,8 @@ static void map_dig(int x, int y)
 
         tested |= 1<<direction;
 
-        if (OUTBOUNDED(x + xinc  , y + yinc  ) || MAP(x + xinc  , y + yinc  ) == ' ' ||
-            OUTBOUNDED(x + xinc*2, y + yinc*2) || MAP(x + xinc*2, y + yinc*2) == ' ')
+        if (OUTBOUNDED(x + xinc  , y + yinc  ) || !MAP(x + xinc  , y + yinc  ) ||
+            OUTBOUNDED(x + xinc*2, y + yinc*2) || !MAP(x + xinc*2, y + yinc*2))
             continue;
         map_dig(x + xinc, y + yinc);
     }
@@ -84,7 +84,7 @@ static void mv_pl(float x, float y)
 {
     x = pl.x + x;
     y = pl.y + y;
-    if (MAP(x, y) == ' ') {
+    if (!MAP(x, y)) {
         pl.x = x;
         pl.y = y;
     }
@@ -158,7 +158,7 @@ static void draw_floor(u8 *data, int y)
 
 struct coords { float x, y; };
 
-#define HIT_WALL(i, xb, yb) (OUTBOUNDED(i.x, i.y) || MAP(xb, yb) != ' ')
+#define HIT_WALL(i, xb, yb) (OUTBOUNDED(i.x, i.y) || MAP(xb, yb))
 #define DIST(p1, p2)        ((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y))
 
 static float get_dist_wall(float angle)
