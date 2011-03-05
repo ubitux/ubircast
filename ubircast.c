@@ -228,7 +228,6 @@ int main(void)
         update_frame((u8*)s->pixels);
         SDL_UnlockSurface(s);
         SDL_Flip(s);
-        SDL_Delay(1);
 
         frames++;
         ticks = SDL_GetTicks();
