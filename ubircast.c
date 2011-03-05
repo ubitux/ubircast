@@ -119,8 +119,11 @@ static u8 sky[WIN_H / 2 * WIN_W * (BPP / 8)];
 
 static void init_sky(void)
 {
-    for (size_t i = 0; i < sizeof(sky); i += 4)
-        memcpy(&sky[i], "\xAA\x30\x30\xff", 4);
+    for (int y = 0; y < WIN_H / 2; y++) {
+        u8 c[4] = {y*0xff/WIN_H, y*0x7f/WIN_H, y*0x7f/WIN_H, 0};
+        for (int x = 0; x < WIN_W; x++)
+            memcpy(&sky[(y * WIN_W + x) * (BPP / 8)], c, 4);
+    }
 }
 
 static int draw_wall(u8 *data, int wall_h)
