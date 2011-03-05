@@ -13,6 +13,8 @@
 
 typedef uint8_t u8;
 
+#include "wall.c"
+
 static struct {
     float x, y, angle;
 } pl = {
@@ -126,21 +128,32 @@ static void init_sky(void)
     }
 }
 
-static int draw_wall(u8 *data, int wall_h)
+struct coords { float x, y; };
+
+struct inter {
+    struct coords pos;
+    float dist;
+    int wall_h;
+    int xy;
+};
+
+static int draw_wall(u8 *data, struct inter i)
 {
     int j, y;
-    u8 *c = (u8*)"\x20\x10\x20\xff";
+    int wall_h = i.wall_h;
 
-    if (wall_h < 0) {
-        wall_h = -wall_h;
-        c = (u8*)"\x50\x50\x50\xff";
-    }
-
-    if (wall_h > WIN_H)
+    float yy = 0.f, yinc = 1.f / wall_h;
+    if (wall_h > WIN_H) {
+        yy = yinc * (wall_h - WIN_H) / 2.f;
         wall_h = WIN_H;
+    }
     y = WIN_H / 2 - wall_h / 2;
     data += y * WIN_W * (BPP / 8);
-    for (j = 0; j < wall_h; j++) {
+    float xx = i.xy < 0 ? i.pos.y - (int)i.pos.y : i.pos.x - (int)i.pos.x;
+    for (j = 0; j < wall_h; j++, yy += yinc) {
+        int xi = xx * WALL_TEX_WIDTH;
+        int yi = yy * WALL_TEX_HEIGHT;
+        u8 *c = &WALL_TEX_pixel_data[(yi * WALL_TEX_WIDTH + xi) * (BPP / 8)];
         memcpy(data, c, 4);
         data += WIN_W * (BPP / 8);
     }
@@ -156,12 +169,10 @@ static void draw_floor(u8 *data, int y)
     }
 }
 
-struct coords { float x, y; };
-
 #define HIT_WALL(i, xb, yb) (OUTBOUNDED(i.x, i.y) || MAP(xb, yb))
 #define DIST(p1, p2)        ((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y))
 
-static float get_dist_wall(float angle)
+static struct inter get_wall_inter(float angle)
 {
     float slope = tan(angle);
     int xinc = angle > M_PI/2.f && angle < 3.f*M_PI/2.f ? -1 : 1;
@@ -185,11 +196,22 @@ static float get_dist_wall(float angle)
         iy.y += yinc;
     }
 
-    float dist_p1 = DIST(pl, ix);
-    float dist_p2 = DIST(pl, iy);
-    return sqrt(dist_p1 < dist_p2 ? dist_p1 : dist_p2) // shorter dist
-         * cos(angle - pl.angle)                       // distorsion fix
-         * (dist_p1 < dist_p2 ? -1 : 1);               // difference between X and Y hit
+    float dist2_p1 = DIST(pl, ix);
+    float dist2_p2 = DIST(pl, iy);
+    struct inter i;
+
+    if (dist2_p1 < dist2_p2) {
+        i.pos  = ix;
+        i.dist = dist2_p1;
+        i.xy   = -1;
+    } else {
+        i.pos  = iy;
+        i.dist = dist2_p2;
+        i.xy   = 1;
+    }
+    i.dist   = sqrt(i.dist) * cos(angle - pl.angle);
+    i.wall_h = WIN_H / i.dist;
+    return i;
 }
 
 static void update_frame(u8 *data)
@@ -197,8 +219,7 @@ static void update_frame(u8 *data)
     memcpy(data, sky, sizeof(sky));
     float angle = add_angle(pl.angle, FOV / 2.f);
     for (int x = 0; x < WIN_W; x++) {
-        int wall_h = (int)(WIN_H / get_dist_wall(angle) + .5f);
-        int y = draw_wall(data, wall_h);
+        int y = draw_wall(data, get_wall_inter(angle));
 
         draw_floor(data, y);
         angle = sub_angle(angle, FOV / WIN_W);
