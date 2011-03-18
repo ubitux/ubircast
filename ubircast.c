@@ -219,7 +219,7 @@ static struct inter get_wall_inter(float angle)
         i.dist = dist2_p2;
         i.xy   = 1;
     }
-    i.dist   = sqrt(i.dist) * cos(angle - pl.angle);
+    i.dist   = sqrtf(i.dist) * cos(angle - pl.angle);
     i.wall_h = WIN_H / i.dist;
     return i;
 }
